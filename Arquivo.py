@@ -102,6 +102,22 @@ def fazer_crossover(pai1, pai2):
 
     return filho1, filho2
 
+def mutacao_filhos(filho1, filho2):
+    filho1_mutado = np.copy(filho1)
+    filho2_mutado = np.copy(filho2)
+
+    operador1 = random.randint(0, len(filho1) - 1)
+    operador2 = random.randint(0, len(filho1) - 1)
+
+    # se sortear o mesmo operador, repete
+    if operador1 == operador2:
+        return mutacao_filhos(filho1, filho2)
+
+    filho1_mutado[operador1], filho1_mutado[operador2] = filho1_mutado[operador2], filho1_mutado[operador1]
+    filho2_mutado[operador1], filho2_mutado[operador2] = filho2_mutado[operador2], filho2_mutado[operador1]
+
+    return filho1_mutado, filho2_mutado
+
 
 def gerar_filhos(populacao_pais):
     # Roleta proporcional aos top 10 (peso decrescente)
@@ -111,10 +127,11 @@ def gerar_filhos(populacao_pais):
 
     filhos = []
     for _ in range(5):
-        # pga dois pais aleatorios e gera dois filhos fazendo o crossover
+        # pga dois pais aleatorios e gera dois filhos fazendo o crossover e mutacao
         pai1 = random.choice(roleta)
         pai2 = random.choice(roleta)
         filho1, filho2 = fazer_crossover(pai1, pai2)
+        filho1, filho2 = mutacao_filhos(filho1, filho2)
         filhos.append(filho1)
         filhos.append(filho2)
 
