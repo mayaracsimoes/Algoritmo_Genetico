@@ -1,4 +1,6 @@
 import numpy as np
+import random
+import sys
 from math import sqrt
 
 # Dados das cidades
@@ -50,56 +52,93 @@ def cv_fitness(individuos, x, y):
     # Obtém os índices que ordenariam as distâncias em ordem crescente
     indices_ordenados = np.argsort(distancias)
 
-    # Ordena tanto as distâncias quanto a matriz tour de acordo com os índices
-    distancias_ordenadas = distancias[indices_ordenados]
-    tour_ordenado = tour[indices_ordenados]
+    return distancias[indices_ordenados], tour[indices_ordenados]
 
-    return distancias_ordenadas, tour_ordenado
 
 def armazena_dez_melhores(distancias, individuos):
     # Seleciona os 10 melhores
+    primeiros_10_individuos = individuos[:10, :-1].astype(int)
     primeiras_10_distancias = distancias[:10]
-    primeiras_10_individuos = individuos[:10]
-
-    print(f" 10 melhores distâncias: {primeiras_10_distancias}")
-    print(f" 10 pais melhores: {primeiras_10_individuos}")
-
-    return distancias,individuos
+    return primeiras_10_distancias, primeiros_10_individuos
 
 
-def transformar_vetor(vetor):
-    vetor_transformado = np.empty(len(vetor), dtype=object)  # Usando dtype=object para números grandes
+def fazer_crossover(pai1, pai2):
+    # cria arrays de filhos
+    tamanho = len(pai1)
+    filho1 = np.full(tamanho, -1, dtype=int)
+    filho2 = np.full(tamanho, -1, dtype=int)
 
-    for i in range(len(vetor)):
-        valor = vetor[i]
-        if i == 0:
-            novo_valor = valor  # Mantém o primeiro elemento sem alteração
-        else:
-            ultimo_digito = str(valor)[-1]  # Pega o último dígito
-            novo_valor = int(str(valor) + ultimo_digito * i)  # Repete o último dígito 'i' vezes
-        vetor_transformado[i] = novo_valor
+    ciclo = 0
+    usados = set()
 
-    return vetor_transformado
+    while len(usados) < tamanho:
+        # encontra um índice não usado
+        for i in range(tamanho):
+            if i not in usados:
+                inicio = i
+                break
 
-# Exemplo de uso
+        indice = inicio
+        while True:
+            # copia gene segundo o ciclo
+            if ciclo % 2 == 0:
+                filho1[indice], filho2[indice] = pai1[indice], pai2[indice]
+            else:
+                filho1[indice], filho2[indice] = pai2[indice], pai1[indice]
+
+            usados.add(indice)
+
+            # próximo valor a buscar em pai1
+            proximo_valor = pai2[indice]
+            pos = np.where(pai1 == proximo_valor)[0]
+            if pos.size == 0:
+                break
+
+            indice = pos[0]
+            if indice == inicio:
+                break
+
+        ciclo += 1
+
+    return filho1, filho2
+
+
+def gerar_filhos(populacao_pais):
+    # Roleta proporcional aos top 10 (peso decrescente)
+    roleta = []
+    for i, pai in enumerate(populacao_pais):
+        roleta.extend([pai] * (10 - i))
+
+    filhos = []
+    for _ in range(5):
+        # pga dois pais aleatorios e gera dois filhos fazendo o crossover
+        pai1 = random.choice(roleta)
+        pai2 = random.choice(roleta)
+        filho1, filho2 = fazer_crossover(pai1, pai2)
+        filhos.append(filho1)
+        filhos.append(filho2)
+
+    return np.array(filhos, dtype=int)
+
+
 if __name__ == "__main__":
     num_cidades = len(x)
     num_individuos = 20
+    num_iteracoes = 1000
 
     # Gera população inicial (cada linha é uma permutação das cidades)
     # +1 porque as cidades são numeradas de 1 a N
     population = np.array([np.random.permutation(num_cidades) +1 for _ in range(num_individuos)])
+ 
+    for iteracao in range(num_iteracoes):
+        # Calcula as distancias, ja adiciona o puxadinho nos individuos e ja vem ordenado 
+        distancia, individuos = cv_fitness(population, x, y)
 
-    # Faz o puxadinho da primeira coluna pra última
-    for i in range(num_individuos):
-        population[i, 20] = population[i, 0]
+        # retorna apenas os 10 melhores
+        menores_distancias, melhores_individuos = armazena_dez_melhores(distancia, individuos)
 
-    # Calcula as distâncias
-    distancias, individuos = cv_fitness(population, x, y)
+        print(f"Geração {iteracao}: Melhores distâncias = {menores_distancias}\n")
 
-    # Armazena os dez melhores, descarta os 10 piores
-    distancias, individuos = armazena_dez_melhores(distancias, individuos)
-
-    matriz_transformada = transformar_vetor(individuos)
-
-    print(f" {matriz_transformada}")
+        # Gera novos filhos e monta nova população
+        filhos = gerar_filhos(melhores_individuos)
+        population = np.vstack((melhores_individuos, filhos))
