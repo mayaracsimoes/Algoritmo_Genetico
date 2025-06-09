@@ -169,10 +169,19 @@ if __name__ == "__main__":
     num_individuos = 20
     num_iteracoes = 1000
 
+    print(f"Tamanho da população: {num_individuos}")
+    print(f"Número de iterações {num_iteracoes}")
+    print(f"Número de cidades {len(x)}\n")
+
     # Gera população inicial (cada linha é uma permutação das cidades)
     # +1 porque as cidades são numeradas de 1 a N
     population = np.array([np.random.permutation(num_cidades) +1 for _ in range(num_individuos)])
  
+    print(f"População inicial:\n")
+    print(population)
+    print()
+
+    menores_distancias, melhores_individuos = [], []
     for iteracao in range(num_iteracoes):
         # Calcula as distancias, ja adiciona o puxadinho nos individuos e ja vem ordenado 
         distancia, individuos = cv_fitness(population, x, y)
@@ -180,8 +189,18 @@ if __name__ == "__main__":
         # retorna apenas os 10 melhores
         menores_distancias, melhores_individuos = armazena_dez_melhores(distancia, individuos)
 
-        print(f"Geração {iteracao}: Melhores distâncias = {menores_distancias}\n")
+        # print(f"Geração {iteracao}: Melhores distâncias = {menores_distancias}\n")
 
         # Gera novos filhos e monta nova população
         filhos = gerar_filhos(melhores_individuos)
         population = np.vstack((melhores_individuos, filhos))
+
+    print(f"População final:")
+    print(population)
+    print()
+
+    print(f"Melhor custo:")
+    print(menores_distancias[0])
+
+    print("Melhor solução:")
+    print(melhores_individuos[0])
