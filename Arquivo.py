@@ -63,7 +63,7 @@ def armazena_dez_melhores(distancias, individuos):
 
 
 def fazer_crossover(pai1, pai2):
-    # cria arrays de filhos
+    # cria arrays de filhos, inicializando todos zerados (com -1)
     tamanho = len(pai1)
     filho1 = np.full(tamanho, -1, dtype=int)
     filho2 = np.full(tamanho, -1, dtype=int)
@@ -71,7 +71,24 @@ def fazer_crossover(pai1, pai2):
     ciclo = 0
     usados = set()
 
+    """
+    Exemplo de ciclo 
+        - Indice = 0:
+        - ciclo % 2 == 0, logo:
+            filho1[0] = pai1[0]
+            filho2[0] = pai2[0]
+        - proximo_valor = pai2[0]
+        - Busca o prox_valor em pai1, ele está em indice = 4 por exemplo
+        - Repete com proximo indice
+            filho1[4] = pai1[4]
+            filho2[4] = pai2[4]
+        - proximo_valor = pai2[4]
+        - Busca em pai1 → se for o índice 0 (inicial), ciclo fechado e vi para o proximo livre
+    """
+
     while len(usados) < tamanho:
+        inicio = 0
+
         # encontra um índice não usado
         for i in range(tamanho):
             if i not in usados:
@@ -79,6 +96,7 @@ def fazer_crossover(pai1, pai2):
                 break
 
         indice = inicio
+
         while True:
             # copia gene segundo o ciclo
             if ciclo % 2 == 0:
@@ -86,15 +104,23 @@ def fazer_crossover(pai1, pai2):
             else:
                 filho1[indice], filho2[indice] = pai2[indice], pai1[indice]
 
+            # marca o indice como preenchido
             usados.add(indice)
 
-            # próximo valor a buscar em pai1
+            # próximo valor a buscar em pai1 (eh o valor preenchido do pai2)
             proximo_valor = pai2[indice]
-            pos = np.where(pai1 == proximo_valor)[0]
-            if pos.size == 0:
+
+            # procura a posicao do pai1 que possui esse elemento do pai2
+            prox_pos = np.where(pai1 == proximo_valor)[0]
+
+            # se nao possuir, vai pula pro prox ciclo
+            if prox_pos.size == 0:
                 break
 
-            indice = pos[0]
+            # vai para o proximo indice do pai
+            indice = prox_pos[0]
+
+            # valida se nao eh o mesmo indice que iniciou  o ciclo, se for, pate para o proximo
             if indice == inicio:
                 break
 
